@@ -9,23 +9,36 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-          
+
       - name: Install dependencies
         run: composer install --no-dev
-        
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          OCI_USER_ID=${{ secrets.OCI_USER_ID }}
+          OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}
+          OCI_REGION=${{ secrets.OCI_REGION }}
+          OCI_FINGERPRINT=${{ secrets.OCI_FINGERPRINT }}
+          OCI_AVAILABILITY_DOMAIN=${{ secrets.OCI_AVAILABILITY_DOMAIN }}
+          OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}
+          OCI_OCPUS=4
+          OCI_MEMORY_IN_GBS=24
+          OCI_BOOT_VOLUME_SIZE_IN_GBS=200
+          OCI_OPERATING_SYSTEM=Canonical Ubuntu
+          OCI_OPERATING_SYSTEM_VERSION=22.04
+          OCI_SSH_PUBLIC_KEY=${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          EOF
+          
+          printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          echo "OCI_PRIVATE_KEY_FILE_PATH=$(pwd)/private_key.pem" >> .env
+
       - name: Run OCI capacity check
-        env:
-          OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
-          OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
-          OCI_REGION: ${{ secrets.OCI_REGION }}
-          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
-          OCI_AVAILABILITY_DOMAIN: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
-          OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
         run: php index.php
