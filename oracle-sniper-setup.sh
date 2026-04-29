@@ -286,20 +286,22 @@ set_secret() {
     printf '%s' "$2" | gh secret set "$1" --repo "$GITHUB_REPO"
     echo -e "${GREEN}✓${NC}"
 }
-set_secret "OCI_USER_OCID"       "$OCI_USER"
-set_secret "OCI_TENANCY_OCID"    "$OCI_TENANCY"
+set_secret "OCI_USER_ID"         "$OCI_USER"
+set_secret "OCI_TENANCY_ID"      "$OCI_TENANCY"
 set_secret "OCI_KEY_FINGERPRINT" "$OCI_FINGERPRINT"
 set_secret "OCI_REGION"          "$OCI_REGION"
 set_secret "OCI_SUBNET_ID"       "$OCI_SUBNET_ID"
 set_secret "OCI_IMAGE_ID"        "$OCI_IMAGE_ID"
 set_secret "OCI_SSH_PUBLIC_KEY"  "$OCI_SSH_PUBLIC_KEY"
-set_secret "OCI_PRIVATE_KEY"     "$(cat $OCI_KEY)"
+set_secret "OCI_PRIVATE_KEY"     "$(cat "$OCI_KEY")"
 set_secret "OCI_OCPUS"           "$OCI_OCPUS"
 set_secret "OCI_MEMORY_IN_GBS"   "$OCI_MEMORY_IN_GBS"
+set_secret "OCI_SHAPE"           "VM.Standard.A1.Flex"
+set_secret "OCI_MAX_INSTANCES"   "1"
+set_secret "OCI_AVAILABILITY_DOMAIN" ""
 
-gh workflow enable --repo "$GITHUB_REPO" 2>/dev/null || true
-gh workflow run run.yml --repo "$GITHUB_REPO" 2>/dev/null || \
-gh workflow run tests.yml --repo "$GITHUB_REPO" 2>/dev/null || true
+gh workflow enable oci.yml --repo "$GITHUB_REPO" 2>/dev/null || true
+gh workflow run oci.yml --repo "$GITHUB_REPO" 2>/dev/null || true
 
 echo ""
 echo -e "${BOLD}${GREEN}╔════════════════════════════════════════════════╗${NC}"
