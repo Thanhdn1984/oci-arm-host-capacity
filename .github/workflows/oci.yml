@@ -14,40 +14,36 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.3'
+          extensions: curl, json
 
       - name: Install dependencies
-        run: composer install --no-dev
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
 
       - name: Create config files
+        shell: bash
         run: |
+          set -euo pipefail
           printf '%s' '${{ secrets.OCI_PRIVATE_KEY }}' > private_key.pem
           chmod 600 private_key.pem
-          printf '%s' '${{ secrets.OCI_SSH_PUBLIC_KEY }}' > ssh_public_key.txt
-          
-          python3 -c "
-          import os
-          lines = [
-            'OCI_USER_ID=${{ secrets.OCI_USER_ID }}',
-            'OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}',
-            'OCI_REGION=${{ secrets.OCI_REGION }}',
-            'OCI_FINGERPRINT=${{ secrets.OCI_FINGERPRINT }}',
-            'OCI_AVAILABILITY_DOMAIN=${{ secrets.OCI_AVAILABILITY_DOMAIN }}',
-            'OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}',
-            'OCI_OCPUS=4',
-            'OCI_MEMORY_IN_GBS=24',
-            'OCI_BOOT_VOLUME_SIZE_IN_GBS=200',
-            'OCI_OPERATING_SYSTEM=Ubuntu',
-            'OCI_OPERATING_SYSTEM_VERSION=22.04',
-            'OCI_PRIVATE_KEY_FILE_PATH=./private_key.pem',
-          ]
-          with open('.env', 'w') as f:
-            f.write('\n'.join(lines) + '\n')
-          with open('ssh_public_key.txt', 'r') as f:
-            ssh_key = f.read().strip()
-          with open('.env', 'a') as f:
-            f.write('OCI_SSH_PUBLIC_KEY=' + repr(ssh_key) + '\n')
-          "
+          cat > .env <<'EOF'
+          OCI_REGION=${{ secrets.OCI_REGION }}
+          OCI_USER_ID=${{ secrets.OCI_USER_ID }}
+          OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}
+          OCI_KEY_FINGERPRINT=${{ secrets.OCI_KEY_FINGERPRINT }}
+          OCI_PRIVATE_KEY_FILENAME=${{ github.workspace }}/private_key.pem
+          OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}
+          OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}
+          OCI_OCPUS=${{ secrets.OCI_OCPUS }}
+          OCI_MEMORY_IN_GBS=${{ secrets.OCI_MEMORY_IN_GBS }}
+          OCI_SHAPE=VM.Standard.A1.Flex
+          OCI_MAX_INSTANCES=1
+          CACHE_AVAILABILITY_DOMAINS=1
+          TOO_MANY_REQUESTS_TIME_WAIT=600
+          OCI_BOOT_VOLUME_SIZE_IN_GBS=200
+          OCI_AVAILABILITY_DOMAIN=${{ secrets.OCI_AVAILABILITY_DOMAIN }}
+          EOF
+          printf 'OCI_SSH_PUBLIC_KEY="%s"\n' '${{ secrets.OCI_SSH_PUBLIC_KEY }}' >> .env
 
       - name: Run OCI capacity check
         run: php index.php
